@@ -13,6 +13,7 @@ import arrow # Replacement for datetime, based on moment.js
 # import datetime # But we still need time
 from dateutil import tz  # For interpreting local times
 
+from freeEvents import *
 
 # OAuth2  - Google library implementation for convenience
 from oauth2client import client
@@ -189,13 +190,19 @@ def setrange():
     User chose a date range with the bootstrap daterange
     widget.
     """
-    flask.flash("Setrange gave us '{}'".format(
-      request.form.get('daterange')))
     daterange = request.form.get('daterange')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
     flask.session['begin_date'] = interpret_date(daterange_parts[0])
     flask.session['end_date'] = interpret_date(daterange_parts[2])
+
+    begin_time = interpret_time(request.form.get('beginTime'))
+    end_time = interpret_time(request.form.get('endTime'))
+    flask.session['begin_time'] = begin_time
+    flask.session['end_time'] = end_time
+
+
+    flask.flash("Setrange gave us : {} time from {} to {}".format(daterange, arrow.get(begin_time).format("h:mm A"), arrow.get(end_time).format("h:mm A")))
     return flask.redirect(flask.url_for("choose"))
 
 ####
@@ -221,6 +228,7 @@ def init_session_values():
     # Default time span each day, 8 to 5
     flask.session["begin_time"] = interpret_time("9am")
     flask.session["end_time"] = interpret_time("5pm")
+    flask.session["timerange"] = ["09:00","17:00"]
 
 def interpret_time( text ):
     """
@@ -272,6 +280,8 @@ def next_day(isotext):
 def get_events(service, calenderid):
     start = flask.session['begin_date'] ;
     end = flask.session['end_date'] ;
+    beginTime = arrow.get(flask.session['begin_time'])
+    endTime = arrow.get(flask.session['end_time'])
     if start == end:
         end = next_day(start)
     eventsResult = service.events().list(
@@ -282,17 +292,31 @@ def get_events(service, calenderid):
     result = []
 
     for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        end = event['end'].get('dateTime', event['end'].get('date'))
+        if 'transparency' in event:
+            continue
+        event_start = arrow.get(event['start'].get('dateTime', event['start'].get('date')))
+        event_end = arrow.get(event['end'].get('dateTime', event['end'].get('date')))
+        choose_start = replaceHM(arrow.get(event_start), beginTime.hour, beginTime.minute)
+        choose_end = replaceHM(arrow.get(event_end), endTime.hour, endTime.minute)
+
+        if event_start >= choose_end or event_end <= choose_start:
+            continue
         summary =  'no summary'
         if 'summary' in event:
             summary = event['summary']
         result.append(
-          { "start": arrow.get(start).format('YYYY-MM-DD HH:mm'),
-            "end": arrow.get(end).format('YYYY-MM-DD HH:mm'),
+          { "start": arrow.get(event_start).format('YYYY-MM-DD HH:mm'),
+            "end": arrow.get(event_end).format('YYYY-MM-DD HH:mm'),
             "summary": summary,
+            "calendar" : eventsResult['summary']
             })
+    result = sorted(result, key = lambda k : k['start'])
 
+    result = free_events(flask.session['begin_date'],
+                         flask.session['end_date'],
+                         flask.session['begin_time'],
+                         flask.session['end_time'],
+                         result)
     return result
 
 def list_calendars(service):

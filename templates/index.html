@@ -28,6 +28,9 @@
 
 <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
 <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.timepicker/0.2.6/js/bootstrap-timepicker.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.timepicker/0.2.6/css/bootstrap-timepicker.css" />
+
 
 
 </head>
@@ -41,7 +44,7 @@
   -- If there are any warnings or other messages from a prior action,
   -- they appear above the rest of the content, just until the next 
   -- action.
-  -->
+  ---->
 
 {% with messages = get_flashed_messages() %}
   {% if messages %}
@@ -65,7 +68,13 @@
   <script type="text/javascript">
   $(function() {
   $('input[name="daterange"]').daterangepicker(
-    {    ranges: {
+      {   
+          timePicker : true,
+          timePicker24Hour : true,
+          local :{
+            format:'YYYY-MM-DD HH:mm',
+          },
+          ranges: {
            'Today': [moment(), moment()],
            'Tomorrow':[moment().add(1, 'days'),
                        moment().add(1, 'days')], 
@@ -78,6 +87,11 @@
        );
     });
   </script>
+  <br><br>
+  <input type="time" name="beginTime" id="beginTime" value="{{ session.timerange.0 }}" /> 
+  to 
+  <input type="time" name="endTime" id="endTime" value="{{ session.timerange.1 }}"/>
+
 
 <br /><input type="submit" value="Choose" />
 </form>
@@ -93,6 +107,11 @@
   {% for cal in g.calendars if cal.selected %}
           <div class="col-md-4">
 	   {{ cal.summary }}
+           <br/>
+           {% for e in cal.event%}
+             {{e.start}} - {{e.end}} : {{e.summary}}
+          <br/>
+          {%endfor%}
           </div>
          {% if loop.index is divisibleby 3 %}
           </div> <div class="row">
