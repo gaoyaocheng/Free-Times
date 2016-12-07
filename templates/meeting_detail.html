@@ -2,27 +2,21 @@
 <html lang="en"> <head>
         <title>View Meeting</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
         <!-- Include Required Prerequisites -->
         <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
         <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
         <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
-
         <!-- Include Date Range Picker -->
         <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
         <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
-
         <!-- Our own style sheet -->
         <link rel="stylesheet" href="/static/css/busy.css" />
-
     </head>
-
 
     <body>
         <div class="container">
 
             <h1>View Meeting</h1>
-            <h4>Here are the details of the meeting</h4>
 
             Title: <input type="text" id="title" size=50 
             value="{{session.current_meeting.title}}" readonly><br><br>
@@ -33,14 +27,14 @@
             Date Range: <input type="text" id="daterange" size="24" 
             value="{{session.current_meeting.start_date}} - {{session.current_meeting.end_date}}"readonly>
             <br><br>
-            Between <input type="time" id="begin_time" 
+            from <input type="time" id="begin_time" 
             value="{{session.current_meeting.start_time}}" readonly>
-            and  <input type="time" id="end_time" value="{{session.current_meeting.end_time}}" readonly>
+            to <input type="time" id="end_time" value="{{session.current_meeting.end_time}}" readonly>
             <br>
             <hr>
             <h3>Send this link to invitees:</h3> <input type="text" size="65" id="invite_link" value="" readonly>
 
-            <h3>Respondents so far: </h3>
+            <h3>get respnose from these user: </h3>
             {% if session.names is defined %}
             {% for name in session.names %}
             <div class="row">
@@ -52,21 +46,21 @@
             {% else %}
             <div class="row">
                 <div class="col-md-4">
-                    No respondents so far.
+                    No response so far.
                 </div>
             </div>
             {% endif %}
 
-            <h3>List of the current non-conflicting times:</h3>
-            {% if session.available_times is defined %}
-            {% if session.available_times is equalto []%}
+            <h3>free times:</h3>
+            {% if session.free_times is defined %}
+            {% if session.free_times is equalto []%}
             <div class="row">
                 <div class="col-md-4">
                     There are not non-conflicting times. : (
                 </div>
             </div>
             {% else %}
-            {% for start, end in session.available_times %}
+            {% for start, end in session.free_times %}
             <div class="row">
                 <div class="col-md-4">
                     {{ start | fmtdatetime }} - {{ end | fmttime }}

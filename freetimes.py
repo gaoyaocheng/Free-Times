@@ -3,7 +3,7 @@ import arrow
 def replaceHM(date ,h ,m):
   return date.replace(hour = h, minute = m)
 
-def free_events(startDate, endDate, startTime, endTime, busyEvents):
+def free_time(startDate, endDate, startTime, endTime, busytime):
 
   bh = arrow.get(startTime).hour
   bm = arrow.get(startTime).minute
@@ -13,8 +13,8 @@ def free_events(startDate, endDate, startTime, endTime, busyEvents):
   nowDate = bDate = replaceHM(arrow.get(startDate), bh, bm)
   eDate = replaceHM(arrow.get(endDate), eh, em)
 
-  freeEvents= []
-  for event in busyEvents:
+  freetime = []
+  for event in busytime:
     event_start = arrow.get(event['start'])
     event_end = arrow.get(event['end'])
 
@@ -23,11 +23,10 @@ def free_events(startDate, endDate, startTime, endTime, busyEvents):
       while nowDate < replaceHM(event_start, bh, bm):
 
         if nowDate < replaceHM(nowDate, eh, em):
-          freeEvents.append({
+          freetime.append({
                     'start': nowDate.format('YYYY-MM-DD HH:mm'),
                     'end': replaceHM(nowDate,eh, em).format(
                         'YYYY-MM-DD HH:mm'),
-                    'summary': 'Free'
                     })
 
         nowDate = replaceHM(nowDate, bh, bm)
@@ -37,23 +36,21 @@ def free_events(startDate, endDate, startTime, endTime, busyEvents):
       freeEvents.append({
                 'start': nowDate.format('YYYY-MM-DD HH:mm'),
                 'end': event_start.format('YYYY-MM-DD HH:mm'),
-                'summary': 'Free'
                 })
 
     nowDate = event_end
 
-    freeEvents.append(event)
+    freetime.append(event)
 
   while nowDate < eDate:
     if nowDate < replaceHM(nowDate, eh, em):
-      freeEvents.append({
+      freetime.append({
                 'start': nowDate.format('YYYY-MM-DD HH:mm'),
                 'end': replaceHM(nowDate,eh, em).format(
                     'YYYY-MM-DD HH:mm'),
-                'summary': 'Free'
                 })
 
     nowDate = replaceHM(nowDate, bh, bm)
     nowDate = nowDate.replace(days =+ 1)
 
-  return freeEvents
+  return freetime

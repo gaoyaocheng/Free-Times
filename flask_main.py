@@ -16,7 +16,7 @@ from dateutil import tz  # For interpreting local times
 
 from bson.objectid import ObjectId
 
-from freeEvents import *
+from freeTimes import *
 
 # OAuth2  - Google library implementation for convenience
 #from oauth2client import client
@@ -324,43 +324,29 @@ def init_session():
         meetings.append(item)
     flask.session['meetings'] = meetings
 
-def init_meeting(meeting_id):
-    meeting_id = ObjectId(meeting_id)
-    meeting = meeting_table.find_one( {"_id":meeting_id} )
+def init_meeting(mid):
+    mid = ObjectId(mid)
+    meeting = meeting_table.find_one( {"_id":mid} )
     meeting['_id'] = str(meeting['_id'])
-    flask.session['current_meeting'] = meeting
     flask.session['daterange'] = meeting['start_date'] + " - " + meeting['end_date']
+    flask.session['current_meeting'] = meeting
     flask.session['begin_time'] = arrow.get(meeting['start_time'], "HH:mm").replace(tzinfo=tz.tzlocal()).isoformat().split("T")[1]
     flask.session['end_time'] = arrow.get(meeting['end_time'], "HH:mm").replace(tzinfo=tz.tzlocal()).isoformat().split("T")[1]
 
-    # Set the names of the respondents
     names = []
-    busy_times = busy_table.find( {"proposal_ID": meeting_id} )
-    for record in busy_times:
-        if record['name'] not in names:
-            names.append(record['name'])
+    busy = []
+    busy_times = busy_table.find( {"proposal_ID": mid} )
+    for item in busy_times:
+        if item['name'] not in names:
+            names.append(item['name'])
+
+        start = arrow.get(item ['start']).replace(tzinfo=tz.tzlocal()).isoformat()
+        end = arrow.get(item['end']).replace(tzinfo=tz.tzlocal()).isoformat()
+        busy.append({'start':start, 'end':end})
+
     flask.session['names'] = names
 
-    # Set the available times based on the busy times
-    busy = []
-    busy_times = busy_table.find( {"proposal_ID": meeting_id} )
-    for record in busy_times:
-        start = arrow.get(record['start']).replace(tzinfo=tz.tzlocal()).isoformat()
-        end = arrow.get(record['end']).replace(tzinfo=tz.tzlocal()).isoformat()
-        busy.append([start, end])
-
-    start_date, end_date = flask.session['daterange'].split(" - ")
-    time_range_start = arrow.get(start_date + flask.session['begin_time'], "MM/DD/YYYYHH:mm:ssZZ")
-    time_range_end = arrow.get(start_date + flask.session['end_time'], "MM/DD/YYYYHH:mm:ssZZ")
-    end_date = arrow.get(end_date, "MM/DD/YYYY")
-
-    available = []
-    range = arrow.Arrow.span_range('day', time_range_start, end_date)
-    #for day in range:
-    #    available.extend(determine_free_times(busy, time_range_start.isoformat(), time_range_end.isoformat()))
-    #    time_range_start = time_range_start.replace(days=+1)
-    #    time_range_end = time_range_end.replace(days=+1)
-    #flask.session['available_times'] = available
+    flask.session['free_times'] = free_time(start_date, end_date, flask['session']['begin_time'], flask['session']['end_time'], end_time, busy)
 
     return None
 
