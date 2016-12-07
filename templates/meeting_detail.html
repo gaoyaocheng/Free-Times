@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+        <title>View Meeting</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Include Required Prerequisites -->
+        <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
+
+        <!-- Include Date Range Picker -->
+        <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+
+        <!-- Our own style sheet -->
+        <link rel="stylesheet" href="/static/css/busy.css" />
+
+    </head>
+
+
+    <body>
+        <div class="container">
+
+            <h1>View Meeting</h1>
+            <h4>Here are the details of the meeting</h4>
+
+            Title: <input type="text" id="title" size=50 
+            value="{{session.current_meeting.title}}" readonly><br><br>
+            Proposer: <input type="text" id="proposer" 
+            value="{{session.current_meeting.proposer_name}}" readonly><br><br>
+            Description: <textarea id="desc" rows=4 cols=50 
+                readonly>{{session.current_meeting.desc}}</textarea><br><br>
+            Date Range: <input type="text" id="daterange" size="24" 
+            value="{{session.current_meeting.start_date}} - {{session.current_meeting.end_date}}"readonly>
+            <br><br>
+            Between <input type="time" id="begin_time" 
+            value="{{session.current_meeting.start_time}}" readonly>
+            and  <input type="time" id="end_time" value="{{session.current_meeting.end_time}}" readonly>
+            <br>
+            <hr>
+            <h3>Send this link to invitees:</h3> <input type="text" size="65" id="invite_link" value="" readonly>
+
+            <h3>Respondents so far: </h3>
+            {% if session.names is defined %}
+            {% for name in session.names %}
+            <div class="row">
+                <div class="col-md-4">
+                    {{ name }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="row">
+                <div class="col-md-4">
+                    No respondents so far.
+                </div>
+            </div>
+            {% endif %}
+
+            <h3>List of the current non-conflicting times:</h3>
+            {% if session.available_times is defined %}
+            {% if session.available_times is equalto []%}
+            <div class="row">
+                <div class="col-md-4">
+                    There are not non-conflicting times. : (
+                </div>
+            </div>
+            {% else %}
+            {% for start, end in session.available_times %}
+            <div class="row">
+                <div class="col-md-4">
+                    {{ start | fmtdatetime }} - {{ end | fmttime }}
+                </div>
+            </div>    
+            {% endfor %}
+            {% endif %}
+            {% endif %}
+
+        </div>  <!-- end container (for bootstrap) -->
+    </body> 
+
+    <script>
+        $("#invite_link").val(window.location.href.replace("view_meeting","respond"));
+
+    </script>
+</html>

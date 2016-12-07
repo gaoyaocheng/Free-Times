@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+<title>Respond using Manual Selection</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Include Required Prerequisites -->
+<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
+
+<!-- Include Date Range Picker -->
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+ 
+  <!-- Stylesheet for Datepicker -->
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <!-- Jquery UI: for Datepicker-->
+  <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  
+<!-- Our own style sheet -->
+<link rel="stylesheet" href="/static/css/busy.css" />
+
+</head>
+
+
+<div class="container">
+
+<h1>Respond to Proposal</h1>
+{% if session.current_meeting is defined %}
+  <h4>Currently responding to</h4>
+  Title: <input type="text" id="title" size=50 placeholder="Meeting title" 
+          value="{{ session.current_meeting.title }}"readonly><br><br>
+  Proposer: <input type="text" id="proposer" placeholder="Your name" 
+             value="{{ session.current_meeting.proposer_name }}" readonly><br><br>
+  Description: <textarea id="desc" rows=4 cols=50 placeholder="Details, location, etc. (optional)" 
+                readonly>{{ session.current_meeting.desc }}</textarea><br><br>
+
+  Date Range: <input type="text" id="daterange" size="24" 
+               value="{{ session.current_meeting.start_date }} - {{ session.current_meeting.end_date }}" readonly>
+
+  <br><br>
+  
+  Between <input type="time" id="begin_time" 
+           value="{{ session.current_meeting.start_time }}" readonly>
+    and  <input type="time" id="end_time" value="{{ session.current_meeting.end_time }}" readonly>
+  <br>
+{% else %}
+  <h2>Oops. Something went wrong. <a link="/index">Go to home?</a></h2>
+{% endif %}
+
+<hr>
+
+<h2>Submit your busy times below</h2>
+<h3>If you have no conflicting busy times, simply hit submit. : ) </h3>
+
+<!--This is not preferred. In the future, hope to change to a AJAX based implementation, 
+where more fields appear as fields are created.-->
+
+<form action="/submit_manual_times" method="post">
+Name: <input type="text" name="user_name" placeholder="Your name">
+<br><br>
+
+{% for i in range(10) %}
+<div class="row">
+  <div class="col-md-4">
+    Date: <input type="text" class="date" name="date{{i}}" placeholder="MM/DD/YYYY">
+  </div>
+  
+  <div class="col-md-4">
+    From: <input type="time" name="start_time{{i}}" placeholder="">
+    To: <input type="time" name="end_time{{i}}" placeholder="">
+  </div>
+</div>
+<br>
+{% endfor %}
+
+<input type="submit" id="submit_button" value="Submit my busy times">
+</form>
+
+<script>
+// Data picker module/widget. Allows for easy calendar selection.
+$(function() {
+  $( ".date" ).datepicker();
+});
+</script>
+
+</body>
+</html>
+
+
+

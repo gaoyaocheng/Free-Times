@@ -1,125 +1,65 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html lang="en"> <head>
-<title>Appointments</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>MeetMe</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" type="text/css"
-     href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
-/>
+        <!-- Include Required Prerequisites -->
+        <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
 
+        <!-- Our own style sheet -->
+        <link rel="stylesheet" href="/static/css/busy.css" />
 
-<link rel="stylesheet" type="text/css"
-    href="/static/css/busy.css"
-/>
-
-<!-- jquery from a content distribution network; probably cached -->
-<script type="text/javascript"
-     src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
-</script>
-
-<!-- Ideally the rest of our javascript dependencies would be
-     bundled and minified with 'browserify', but I've found that
-     it difficult to handle browserify dependencies for class
-     projects.  So, we'll pick up moment and a date range picker
-     from CDNs instead.
--->
-
-<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-
-<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
-<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
-<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.timepicker/0.2.6/js/bootstrap-timepicker.js"></script>
-<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.timepicker/0.2.6/css/bootstrap-timepicker.css" />
+    </head>
 
 
+    <body>
+        <div class="container">
 
-</head>
+            <h1>MeetMe</h1>
 
-<body>
-<div class="container">
+            <h4>Current Meeting</h4>
 
-<h1>Busy times</h1>
+            {% if (session.meetings is defined) and (session.meetings is not equalto []) %}
+            {% for meeting in session.meetings %}
+            <div class="row">  
+                <div class="col-md-4">
+                    <input type="checkbox" id="{{ meeting._id }}">
+                    <a href="meeting_detail/{{ meeting._id }}">{{ meeting.title }}</a>
+                </div>
+            </div>  
 
-<!--
-  -- If there are any warnings or other messages from a prior action,
-  -- they appear above the rest of the content, just until the next 
-  -- action.
-  ---->
+            {% if loop.last %}
+            <br>
+            <input type="button" id="delete" value="delete selected meeting">		
+            {% endif %}  
+            {% endfor %}
+            {% else %}  
+                No meeting.     
+            {% endif %}
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
+            <br><br>
+            <form action="create_meeting">
+                <input type="submit" value="create new meeting">
+            </form>
 
-<h2>Date range</h2>
-  <form action="/setrange" method="post">
-  <input type="text" name="daterange" size="12"
-    {% if session.daterange is defined %}
-         value="{{session.daterange}}"
-    {% endif %}
-     class="pull-down"
-     style="background: #fff; cursor: pointer; padding: 5px 10px;
-     border: 1px solid #ccc; width: 12em" >
-  <script type="text/javascript">
-  $(function() {
-  $('input[name="daterange"]').daterangepicker(
-      {   
-          timePicker : true,
-          timePicker24Hour : true,
-          local :{
-            format:'YYYY-MM-DD HH:mm',
-          },
-          ranges: {
-           'Today': [moment(), moment()],
-           'Tomorrow':[moment().add(1, 'days'),
-                       moment().add(1, 'days')], 
-           'This week':[moment(), moment().endOf('week')],
-           'Next week':[moment().add(7, 'days').startOf('week'),
-                        moment().add(7, 'days').endOf('week')],
-           'This month':[moment(), moment().endOf('month')],
-           'Within two weeks':[moment(),moment().add(15, 'days')]
-        }}
-       );
-    });
-  </script>
-  <br><br>
-  <input type="time" name="beginTime" id="beginTime" value="{{ session.timerange.0 }}" /> 
-  to 
-  <input type="time" name="endTime" id="endTime" value="{{ session.timerange.1 }}"/>
+        </div>  <!-- end container (for bootstrap) -->
+    </body> 
 
 
-<br /><input type="submit" value="Choose" />
-</form>
-
-    <!--
-    Show the calendar list (if we have it).  This will need to be turned into
-    a form from which calendars can be picked. Up to three entries are
-    shown in each row (but the order is across then down; I would
-    prefer down then across). 
-    -->
-{% if g.calendars is defined  %}
-  <div class="row">
-  {% for cal in g.calendars if cal.selected %}
-          <div class="col-md-4">
-	   {{ cal.summary }}
-           <br/>
-           {% for e in cal.event%}
-             {{e.start}} - {{e.end}} : {{e.summary}}
-          <br/>
-          {%endfor%}
-          </div>
-         {% if loop.index is divisibleby 3 %}
-          </div> <div class="row">
-         {% endif %}
-  {% endfor %}
-  </div>
-{% endif %}
-    
-
-  </div>  <!-- container (for bootstrap) -->
-  </body> </html>
+    <script>
+        $("#delete").click( function() {
+            var checked = $("input:checked");
+            var ids = "";
+            for (var i = 0; i < checked.length; i++) {
+                ids += checked[i].id + ";";
+            }
+            $.getJSON("/_delete_meetings", 
+                {meeting_ids: ids},
+                function(data) {
+                    window.location.href = "index";
+                });
+        });
+    </script>
+</html>

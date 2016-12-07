@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+<title>Respond to a Proposal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Include Required Prerequisites -->
+<script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+<script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
+
+<!-- Include Date Range Picker -->
+<script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+ 
+<!-- Our own style sheet -->
+<link rel="stylesheet" href="/static/css/busy.css" />
+
+</head>
+
+
+<body>
+<div class="container">
+
+<h1>Respond to Proposal</h1>
+<h4>You have been invited to a meeting!</h4>
+
+  Title: <input type="text" id="title" size=50 value="{{session.current_meeting.title}}" readonly><br><br>
+  Proposer: <input type="text" id="proposer" value="{{session.current_meeting.proposer_name}}" readonly><br><br>
+  Description: <textarea id="desc" rows=4 cols=50 readonly>{{session.current_meeting.desc}}</textarea><br><br>
+
+  Date Range: <input type="text" id="daterange" size="24" value="{{session.current_meeting.start_date}} - {{session.current_meeting.end_date}}"readonly>
+
+  <br><br>
+  
+  Between <input type="time" id="begin_time" value="{{session.current_meeting.start_time}}" readonly>  and  <input type="time" id="end_time" value="{{session.current_meeting.end_time}}" readonly>
+<br>
+
+<hr>
+
+<h4>You can respond 1 of 2 ways</h4>
+
+<input type="button" id="useGcal" value="Respond using Google Calendar">
+<br><br> - OR - <br><br>
+<input type="button" id="manualSelection" value="Respond by manual selection">
+
+</div>  <!-- end container (for bootstrap) -->
+</body> 
+
+<script>
+$("#useGcal").click(function() {
+	window.location.href = "../respond_gcal";
+});
+
+$("#manualSelection").click(function() {
+	window.location.href = "../respond_manual"
+});
+</script>
+
+
+</html>

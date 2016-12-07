@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+        <title>Create Meeting</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Include Required Prerequisites -->
+        <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
+        <!-- Include Date Range Picker -->
+        <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+        <!-- Our own style sheet -->
+        <link rel="stylesheet" href="/static/css/busy.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>Create  Meeting</h1>
+
+            <form action="/do_create_meeting" method="post">
+
+                Title: <input type="text" name="title" size=50 placeholder="Meeting title"><br><br>
+                Name: <input type="text" name="proposer" placeholder="Your name"><br><br>
+                Description: <textarea name="desc" rows=4 cols=50 placeholder="Details, location, etc. (optional)"></textarea><br><br>
+
+                Date Range: <input type="text" name="daterange" size="12"
+                {% if session.daterange is defined %}
+                value="{{session.daterange}}"
+                {% endif %}
+                class="pull-down"
+                style="background: white; color:black ; cursor: pointer; padding: 5px 10px;
+                border: 1px solid white; width: 14em" >
+                <script type="text/javascript">
+                    $(function() {
+                        $('input[name="daterange"]').daterangepicker(
+                            {    ranges: {
+                                'Today': [moment(), moment()],
+                                'Tomorrow':[moment().add(1, 'days'),
+                                    moment().add(1, 'days')], 
+                                'This week':[moment(), moment().endOf('week')],
+                                'Next week':[moment().add(7, 'days').startOf('week'),
+                                    moment().add(7, 'days').endOf('week')],
+                                'This month':[moment(), moment().endOf('month')],
+                                'Within two weeks':[moment(),moment().add(15, 'days')]
+                            }}
+                        );
+                    });
+                </script>
+                <br><br>
+                from <input type="time" name="begin_time"> to <input type="time" name="end_time">
+                <br><br>
+                <input type="submit" value="Submit">
+            </form>
+        </div>  <!-- end container (for bootstrap) -->
+    </body> 
+</html>

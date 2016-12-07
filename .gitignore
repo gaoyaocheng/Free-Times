@@ -1,5 +1,5 @@
 # Local
-secrets/*
+#secrets/*
 client_secret.json
 CONFIG.py
 node_modules
