@@ -23,32 +23,32 @@ def free_time(startDate, endDate, startTime, endTime, busytime):
       while nowDate < replaceHM(event_start, bh, bm):
 
         if nowDate < replaceHM(nowDate, eh, em):
-          freetime.append({
-                    'start': nowDate.format('YYYY-MM-DD HH:mm'),
-                    'end': replaceHM(nowDate,eh, em).format(
-                        'YYYY-MM-DD HH:mm'),
-                    })
+          freetime.append(
+                    (nowDate.format('YYYY-MM-DD HH:mm'),
+                    replaceHM(nowDate,eh, em).format(
+                        'YYYY-MM-DD HH:mm'))
+                    )
 
         nowDate = replaceHM(nowDate, bh, bm)
         nowDate = nowDate.replace(days =+ 1)
 
       # for last one free event
-      freeEvents.append({
-                'start': nowDate.format('YYYY-MM-DD HH:mm'),
-                'end': event_start.format('YYYY-MM-DD HH:mm'),
-                })
+      freetime.append(
+                (nowDate.format('YYYY-MM-DD HH:mm'),
+                event_start.format('YYYY-MM-DD HH:mm')
+                ))
 
     nowDate = event_end
 
-    freetime.append(event)
+    #freetime.append(event)
 
   while nowDate < eDate:
     if nowDate < replaceHM(nowDate, eh, em):
-      freetime.append({
-                'start': nowDate.format('YYYY-MM-DD HH:mm'),
-                'end': replaceHM(nowDate,eh, em).format(
-                    'YYYY-MM-DD HH:mm'),
-                })
+      freetime.append(
+                (nowDate.format('YYYY-MM-DD HH:mm'),
+                replaceHM(nowDate,eh, em).format(
+                    'YYYY-MM-DD HH:mm'))
+                )
 
     nowDate = replaceHM(nowDate, bh, bm)
     nowDate = nowDate.replace(days =+ 1)

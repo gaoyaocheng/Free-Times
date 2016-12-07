@@ -346,8 +346,14 @@ def init_meeting(mid):
 
     flask.session['names'] = names
 
-    flask.session['free_times'] = free_time(start_date, end_date, flask['session']['begin_time'], flask['session']['end_time'], end_time, busy)
+    freetime  = free_time(interpret_date(meeting['start_date']),
+            interpret_date(meeting['end_date']),
+            interpret_time(flask.session['begin_time']),
+            interpret_time( flask.session['end_time']),
+            busy)
+    print(freetime);
 
+    flask.session['free_times'] =  freetime;
     return None
 
 
@@ -484,7 +490,7 @@ def format_arrow_time( time ):
 def format_arrow_datetime( datetime ):
     try:
         normal = arrow.get(datetime)
-        return normal.format("MM/DD/YYYY hh:mm A")
+        return normal.format("YYYY-MM-DD hh:mm")
     except:
         return "(bad time)"
 
