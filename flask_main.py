@@ -2,6 +2,7 @@ import flask
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask import jsonify
 import uuid
 
 import json
@@ -21,6 +22,7 @@ from freeEvents import *
 #from oauth2client import client
 import httplib2   # used in oauth2 flow
 
+import os
 # Google API for services
 from apiclient import discovery
 
@@ -50,7 +52,7 @@ MONGO_CLIENT_URL = "mongodb://{}:{}@localhost:{}/{}".format(
 
 try:
     dbclient = MongoClient(MONGO_CLIENT_URL)
-    db = getattr(dbclient, secrets.mongo_client_secrets.db)
+    db = getattr(dbclient, secrets.client_secrets.db)
     busy_table = db.busy
     meeting_table = db.proposal
 
@@ -73,10 +75,10 @@ def index():
 @app.route("/create_meeting")
 def create_meeting():
     app.logger.debug("Entering create_meeting")
-    return render_template('craete_meeting.html')
+    return render_template('create_meeting.html')
 
 @app.route("/meeting_created/<mid>")
-def proposal_created(mid):
+def meeting_created(mid):
     app.logger.debug("Entering proposal_created")
     flask.session['mid'] = mid
     return render_template("meeting_created.html")
@@ -139,21 +141,21 @@ def meeting_detail(mid):
 #                    "end": busy_time[1],
 #                    "name": flask.session['user_name']
 #                }
-#                busy_collection.insert_one(record)
+#                busy_table.insert_one(record)
 #
 #    return jsonify(result={})
 
 @app.route('/do_create_meeting', methods=['POST'])
-def create_meeting():
+def do_create_meeting():
     '''
     Create meeting to mongo
     '''
-    app.logger.debug("Entering create_meeting")
+    app.logger.debug("Entering do_create_meeting")
 
     title = request.form.get('title')
     proposer = request.form.get('proposer')
     desc = request.form.get('desc')
-    start_data, end_date = request.form.get('daterange').split(' - ')
+    start_date, end_date = request.form.get('daterange').split(' - ')
     begin_time = request.form.get('begin_time')
     end_time = request.form.get('end_time')
 
@@ -184,7 +186,7 @@ def delete_meetings():
             continue
         id = ObjectId(id)
         meeting_table.delete_one( {"_id": id} )
-        busy_collection.delete_many( {"proposal_ID": id} )
+        busy_table.delete_many( {"proposal_ID": id} )
 
     return jsonify(result={})
 
@@ -333,7 +335,7 @@ def init_meeting(meeting_id):
 
     # Set the names of the respondents
     names = []
-    busy_times = busy_collection.find( {"proposal_ID": meeting_id} )
+    busy_times = busy_table.find( {"proposal_ID": meeting_id} )
     for record in busy_times:
         if record['name'] not in names:
             names.append(record['name'])
@@ -341,7 +343,7 @@ def init_meeting(meeting_id):
 
     # Set the available times based on the busy times
     busy = []
-    busy_times = busy_collection.find( {"proposal_ID": meeting_id} )
+    busy_times = busy_table.find( {"proposal_ID": meeting_id} )
     for record in busy_times:
         start = arrow.get(record['start']).replace(tzinfo=tz.tzlocal()).isoformat()
         end = arrow.get(record['end']).replace(tzinfo=tz.tzlocal()).isoformat()
@@ -354,11 +356,11 @@ def init_meeting(meeting_id):
 
     available = []
     range = arrow.Arrow.span_range('day', time_range_start, end_date)
-    for day in range:
-        available.extend(determine_free_times(busy, time_range_start.isoformat(), time_range_end.isoformat()))
-        time_range_start = time_range_start.replace(days=+1)
-        time_range_end = time_range_end.replace(days=+1)
-    flask.session['available_times'] = available
+    #for day in range:
+    #    available.extend(determine_free_times(busy, time_range_start.isoformat(), time_range_end.isoformat()))
+    #    time_range_start = time_range_start.replace(days=+1)
+    #    time_range_end = time_range_end.replace(days=+1)
+    #flask.session['available_times'] = available
 
     return None
 
@@ -490,6 +492,13 @@ def format_arrow_time( time ):
     try:
         normal = arrow.get( time )
         return normal.format("HH:mm")
+    except:
+        return "(bad time)"
+@app.template_filter( 'fmtdatetime' )
+def format_arrow_datetime( datetime ):
+    try:
+        normal = arrow.get(datetime)
+        return normal.format("MM/DD/YYYY hh:mm A")
     except:
         return "(bad time)"
 
