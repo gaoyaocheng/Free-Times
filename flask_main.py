@@ -192,9 +192,6 @@ def delete_meetings():
 
 @app.route("/_setbusytimes")
 def find_busy():
-    '''
-    Receive AJAX request to find the busy times
-    '''
     ids = request.args.get("calendar_ids", type=str)
     user_name = request.args.get("name", type=str)
 
@@ -252,7 +249,83 @@ def ignore_busy_times():
 #
 #    return render_template('index.html')
 
+def get_freebusy_times(gcal_service, calendar_ids):
+    busy_times = []
+    free_times = []
 
+    calendar_ids = calendar_ids.split(";")
+
+    start_date, end_date = flask.session['daterange'].split(" - ")
+    time_range_start = arrow.get(start_date + flask.session['begin_time'], "MM/DD/YYYYHH:mm:ssZZ")
+    time_range_end = arrow.get(start_date + flask.session['end_time'], "MM/DD/YYYYHH:mm:ssZZ")
+    end_date = arrow.get(end_date, "MM/DD/YYYY")
+
+    app.logger.debug("Sending freebusy requests to Google Cal")
+    for id in calendar_ids:
+        if id == "":
+            continue
+
+        # Not preferred
+        for cal in flask.session['calendars']:
+            if cal['id'] == id:
+                calendar = cal
+                break
+        #calendar = flask.session['calendars'][int(index)]
+        calendar_name = calendar['summary']
+
+        busy = {calendar_name : []}
+        free = {calendar_name : []}
+        timeMin = time_range_start.isoformat()
+        timeMax = time_range_end.isoformat()
+
+        for day in arrow.Arrow.span_range('day', time_range_start, end_date):
+            query = {
+                    "timeMin": timeMin,
+                    "timeMax": timeMax,
+                    "items": [
+                        {
+                            "id": calendar['id']
+                            }
+                        ]
+                    }
+
+            gcal_request = gcal_service.freebusy().query(body=query)
+            result = gcal_request.execute()
+
+            for busy_time in result['calendars'][calendar['id']]['busy']:
+                start = arrow.get(busy_time['start']).to('local')
+                end = arrow.get(busy_time['end']).to('local')
+                conflict = [start.isoformat(), end.isoformat()]
+                busy[calendar_name].append(conflict)
+            # Using the busy times, determine the free times
+            free_time = determine_free_times(busy[calendar_name], timeMin, timeMax)
+            free[calendar_name].extend(free_time)
+
+            timeMin = next_day(timeMin)
+            timeMax = next_day(timeMax)
+
+        free_times.append(free)
+        busy_times.append(busy)
+
+    return busy_times, free_times
+
+def determine_free_times(busy_times, free_start, free_end):
+    busy_agenda = Agenda()
+    for busy_time in busy_times:
+        start, end = busy_time
+        start = arrow.get(start)
+        end = arrow.get(end)
+        busy_agenda.append(Appt(start, end, ""))
+
+    busy_agenda.normalize()
+    free_start = arrow.get(free_start)
+    free_end = arrow.get(free_end)
+    free_block = Appt(free_start, free_end, "")
+    free_agenda = busy_agenda.complement(free_block)
+
+    free_times = [appt.get_isoformat() for appt in free_agenda]
+
+    return free_times
 def valid_credentials():
     if 'credentials' not in flask.session:
         return None
@@ -287,32 +360,9 @@ def oauth2callback():
     return flask.redirect(flask.url_for('respond_gcal'))
 
 
-#@app.route('/setrange', methods=['POST'])
-#def setrange():
-#    """
-#    User chose a date range with the bootstrap daterange
-#    widget.
-#    """
-#    daterange = request.form.get('daterange')
-#    flask.session['daterange'] = daterange
-#    daterange_parts = daterange.split()
-#    flask.session['begin_date'] = interpret_date(daterange_parts[0])
-#    flask.session['end_date'] = interpret_date(daterange_parts[2])
-#
-#    begin_time = interpret_time(request.form.get('beginTime'))
-#    end_time = interpret_time(request.form.get('endTime'))
-#    flask.session['begin_time'] = begin_time
-#    flask.session['end_time'] = end_time
-#
-#
-#    flask.flash("Setrange gave us : {} time from {} to {}".format(daterange, arrow.get(begin_time).format("h:mm A"), arrow.get(end_time).format("h:mm A")))
-#    return flask.redirect(flask.url_for("choose"))
-#
-####
 #
 #   Initialize session variables
 #
-####
 
 def init_session():
     '''
@@ -346,12 +396,17 @@ def init_meeting(mid):
 
     flask.session['names'] = names
 
-    freetime  = free_time(interpret_date(meeting['start_date']),
-            interpret_date(meeting['end_date']),
-            interpret_time(flask.session['begin_time']),
-            interpret_time( flask.session['end_time']),
-            busy)
-    print(freetime);
+    start_date, end_date = flask.session['daterange'].split(" - ")
+    time_range_start = arrow.get(start_date + flask.session['begin_time'], "MM/DD/YYYYHH:mm:ssZZ")
+    time_range_end = arrow.get(start_date + flask.session['end_time'], "MM/DD/YYYYHH:mm:ssZZ")
+    end_date = arrow.get(end_date, "MM/DD/YYYY")
+
+    freetime = []
+    range = arrow.Arrow.span_range('day', time_range_start, end_date)
+    for day in range:
+        freetime.extend(determine_free_times(busy, time_range_start.isoformat(), time_range_end.isoformat()))
+        time_range_start = time_range_start.replace(days=+1)
+        time_range_end = time_range_end.replace(days=+1)
 
     flask.session['free_times'] =  freetime;
     return None
