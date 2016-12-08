@@ -8,19 +8,12 @@
         <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
         <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
 
-        <!-- Our own style sheet -->
-        <link rel="stylesheet" href="/static/css/busy.css" />
-
     </head>
-
 
     <body>
         <div class="container">
-
             <h1>MeetMe</h1>
-
             <h4>Current Meeting</h4>
-
             {% if (session.meetings is defined) and (session.meetings is not equalto []) %}
             {% for meeting in session.meetings %}
             <div class="row">  

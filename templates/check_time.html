@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+        <title>check time with Google Calendar</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css" />
+        <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+        <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+    </head>
+
+    <body>
+        <div class="container">
+
+            <h1>Check Time with Google Calendar </h1>
+            {% if session.current_meeting is defined %}
+            <h4>Currently responding to</h4>
+            Title: <input type="text" id="title" size=50 placeholder="Meeting title" 
+            value="{{ session.current_meeting.title }}"readonly><br><br>
+            Proposer: <input type="text" id="proposer" placeholder="Your name" 
+            value="{{ session.current_meeting.proposer_name }}" readonly><br><br>
+            Description: <textarea id="desc" rows=4 cols=50 placeholder="Details, location, etc. (optional)" 
+                readonly>{{ session.current_meeting.desc }}</textarea><br><br>
+
+            Date Range: <input type="text" id="daterange" size="24" 
+            value="{{ session.current_meeting.start_date }} - {{ session.current_meeting.end_date }}" readonly>
+
+            <br><br>
+
+            from <input type="time" id="begin_time" value="{{ session.current_meeting.start_time }}" readonly>
+            to <input type="time" id="end_time" value="{{ session.current_meeting.end_time }}" readonly>
+            <br>
+            {% else %}
+            <h2>Oops. Something went wrong. <a link="/index">Go home?</a></h2>
+            {% endif %}
+
+            <hr>
+
+            {% if session.calendars is defined  %}
+            <h3>Enter your name : </h3>
+
+            Name: <input type="text" id="user_name" placeholder="Your name" 
+            value="{% if session.user_name is defined %} {{session.user_name}} {% endif %}">
+            <br>
+
+            <h3>Please select calendars below: </h3>
+            {% for cal in session.calendars if cal.selected %}
+            <div class="row">  
+                <div class="col-md-4">
+                    <input type="checkbox" class="calendar" id="{{ cal.id }}">
+                    <label for="{{ cal.id }}"> {{ cal.summary }} </label>        
+                </div>
+                {% if loop.index is divisibleby 3 %}
+                </div> <div class="row">
+                {% endif %}  
+            </div>  
+
+            {% if loop.last %}
+            <br>
+            <input type="button" id="submit_calendars" value="use these calendars">
+            {% endif %}  
+            {% endfor %}
+            {% endif %}
+
+            {% if session.busy_times is defined  %}
+            <h3>Here are your busy times</h3>
+            {% for cal in session.busy_times %}
+            {% for name, conflicts in cal.items() %}
+
+            {% if loop.first %}
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>{{ name }}</h4>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if conflicts is equalto [] %}
+            <div class="row">
+                <div class="col-md-4">
+                    All Calendar time associate this meeting is free
+                </div>
+            </div>
+            {% else %}
+            {% for start_time, end_time in conflicts %}  
+            <div class="row">
+                <div class="col-md-4">     	        	          
+                    <input type="checkbox" class="busy_time {{name}}" id="{{name}}&{{start_time}}&{{end_time}}"> 
+                    <label for="{{name}}&{{start_time}}&{{end_time}}">{{ start_time | fmtdatetime }} - {{ end_time | fmttime }}</label>             
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}    
+            {% endfor %}
+            {% endfor %}
+            <br>
+            <input type="submit" id="ignore_times" value="Ignore selected busy times">
+            <br><br>
+            <input type="submit" id="submit_times" value="Submit these busy times">
+
+            {% endif %}
+
+        </div> <!--container-->
+    </body>
+
+    <script>
+
+        // Get the ids of the calendars selected, send them to the server
+    $("#submit_calendars").click( function() {	
+        var checked = $("input:checked" || ".calendar");
+        var ids = "";
+        for (var i = 0; i < checked.length; i++) {
+            ids += checked[i].id + ";";
+        }
+
+        var user_name = $("#user_name").val();
+        $.getJSON("/_setbusytimes", 
+            {calendar_ids : ids,
+                name : user_name},
+            function(data) {
+                window.location.href = "check_time";
+            }
+        );
+    });
+
+// Get the ids of the busy times selected, send to the server
+$("#ignore_times").click(function() {
+    var checked = $("input:checked" || ".busy_time");
+    if (checked == []) { // No times checked
+        return;
+    }
+
+    var times = "";
+    for (var i = 0; i < checked.length; i++) {
+        times += checked[i].id + ";";
+    }
+
+    $.getJSON("/_ignore_busy_times",
+        {busy_times: times},
+        function(date) {
+            window.location.href = "check_time";
+        });
+});
+
+// Submit the current busy times as the final answer
+$("#submit_times").click(function() {
+    if ($("#user_name").val().trim() == "") {
+        alert("Please enter a name before submission.");
+        return;
+    }
+
+    $.getJSON("/_submit_busy_times", 
+        {},
+        function(data) {
+            window.location.href = "thanks";
+        });
+
+});
+</script>
+
+</html>

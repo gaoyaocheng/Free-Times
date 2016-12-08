@@ -90,16 +90,15 @@ def meeting_detail(mid):
     init_meeting(mid)
     return render_template('meeting_detail.html')
 
-@app.route("/respond/<mid>")
-def respond(mid):
-    app.logger.debug("Entering respond")
-
+@app.route("/invite/<mid>")
+def invite(mid):
+    app.logger.debug("Entering invite")
     init_meeting(mid)
-    return render_template('respond.html')
+    return render_template('invite.html')
 
 
-@app.route("/respond_gcal")
-def respond_gcal():
+@app.route("/check_time")
+def check_time():
     app.logger.debug("Checking credentials for Google calendar access")
     credentials = valid_credentials()
     if not credentials:
@@ -109,12 +108,7 @@ def respond_gcal():
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
     flask.session['calendars'] = list_calendars(gcal_service)
-    return render_template('respond_gcal.html')
-
-@app.route("/respond_manual")
-def respond_manual():
-    app.logger.debug("Entering respond_manual")
-    return render_template("respond_manual.html")
+    return render_template('check_time.html')
 
 @app.route("/thanks")
 def thanks():
@@ -229,25 +223,6 @@ def ignore_busy_times():
 
     return jsonify(result={})
 
-#@app.route("/choose")
-#def choose():
-#    ## We'll need authorization to list calendars
-#    ## I wanted to put what follows into a function, but had
-#    ## to pull it back here because the redirect has to be a
-#    ## 'return'
-#    credentials = valid_credentials()
-#    if not credentials:
-#        return flask.redirect(flask.url_for('oauth2callback'))
-#
-#    gcal_service = get_gcal_service(credentials)
-#    calendars = list_calendars(gcal_service)
-#    result = []
-#    for cal in calendars:
-#        cal['event'] = get_events(gcal_service, cal['id'])
-#
-#    flask.g.calendars = calendars
-#
-#    return render_template('index.html')
 
 def get_freebusy_times(gcal_service, calendar_ids):
     busy_times = []
@@ -298,7 +273,7 @@ def get_freebusy_times(gcal_service, calendar_ids):
                 conflict = [start.isoformat(), end.isoformat()]
                 busy[calendar_name].append(conflict)
             # Using the busy times, determine the free times
-            free_time = determine_free_times(busy[calendar_name], timeMin, timeMax)
+            free_time = get_free_time(busy[calendar_name], timeMin, timeMax)
             free[calendar_name].extend(free_time)
 
             timeMin = next_day(timeMin)
@@ -309,23 +284,16 @@ def get_freebusy_times(gcal_service, calendar_ids):
 
     return busy_times, free_times
 
-def determine_free_times(busy_times, free_start, free_end):
-    busy_agenda = Agenda()
-    for busy_time in busy_times:
-        start, end = busy_time
-        start = arrow.get(start)
-        end = arrow.get(end)
-        busy_agenda.append(Appt(start, end, ""))
+def get_free_time(busy_times, start_date, end_date):
+    busy = Agenda()
+    for item in busy_times:
+        busy.append(Appt(arrow.get(item), arrow.get(item), ""))
 
-    busy_agenda.normalize()
-    free_start = arrow.get(free_start)
-    free_end = arrow.get(free_end)
-    free_block = Appt(free_start, free_end, "")
-    free_agenda = busy_agenda.complement(free_block)
+    busy.normalize()
 
-    free_times = [appt.get_isoformat() for appt in free_agenda]
+    free = busy.complement(Appt(arrow.get(start_date), arrow.get(end_date), ""))
+    return  [appt.get_isoformat() for appt in free]
 
-    return free_times
 def valid_credentials():
     if 'credentials' not in flask.session:
         return None
@@ -357,7 +325,7 @@ def oauth2callback():
     auth_code = flask.request.args.get('code')
     credentials = flow.step2_exchange(auth_code)
     flask.session['credentials'] = credentials.to_json()
-    return flask.redirect(flask.url_for('respond_gcal'))
+    return flask.redirect(flask.url_for('check_time'))
 
 
 #
@@ -375,6 +343,9 @@ def init_session():
     flask.session['meetings'] = meetings
 
 def init_meeting(mid):
+    '''
+    init meeting value
+    '''
     mid = ObjectId(mid)
     meeting = meeting_table.find_one( {"_id":mid} )
     meeting['_id'] = str(meeting['_id'])
@@ -404,7 +375,7 @@ def init_meeting(mid):
     freetime = []
     range = arrow.Arrow.span_range('day', time_range_start, end_date)
     for day in range:
-        freetime.extend(determine_free_times(busy, time_range_start.isoformat(), time_range_end.isoformat()))
+        freetime.extend(get_free_time(busy, time_range_start.isoformat(), time_range_end.isoformat()))
         time_range_start = time_range_start.replace(days=+1)
         time_range_end = time_range_end.replace(days=+1)
 
