@@ -63,7 +63,7 @@
             {% for start, end in session.free_times %}
             <div class="row">
                 <div class="col-md-4">
-                    {{ start  }} - {{ end }}
+                    {{ start | fmtdatetime }} - {{ end | fmtdatetime }}
                 </div>
             </div>    
             {% endfor %}

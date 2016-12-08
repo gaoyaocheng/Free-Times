@@ -16,7 +16,7 @@ from dateutil import tz  # For interpreting local times
 
 from bson.objectid import ObjectId
 
-from freeTimes import *
+from agenda import *
 
 # OAuth2  - Google library implementation for convenience
 from oauth2client import client
@@ -392,7 +392,7 @@ def init_meeting(mid):
 
         start = arrow.get(item ['start']).replace(tzinfo=tz.tzlocal()).isoformat()
         end = arrow.get(item['end']).replace(tzinfo=tz.tzlocal()).isoformat()
-        busy.append({'start':start, 'end':end})
+        busy.append([start, end])
 
     flask.session['names'] = names
 
