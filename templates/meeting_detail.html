@@ -17,24 +17,15 @@
         <div class="container">
 
             <h1>View Meeting</h1>
+            Title       : {{session.current_meeting.title}} <br>
+            Proposer    : {{session.current_meeting.proposer_name}}<br>
+            Description : {{session.current_meeting.desc}}<br>
+            Time Range  :{{session.current_meeting.start_date}} {{session.current_meeting.start_time}} - {{session.current_meeting.end_date}} {{session.current_meeting.end_time}}
+    <br><br>
 
-            Title: <input type="text" id="title" size=50 
-            value="{{session.current_meeting.title}}" readonly><br><br>
-            Proposer: <input type="text" id="proposer" 
-            value="{{session.current_meeting.proposer_name}}" readonly><br><br>
-            Description: <textarea id="desc" rows=4 cols=50 
-                readonly>{{session.current_meeting.desc}}</textarea><br><br>
-            Date Range: <input type="text" id="daterange" size="24" 
-            value="{{session.current_meeting.start_date}} - {{session.current_meeting.end_date}}"readonly>
-            <br><br>
-            from <input type="time" id="begin_time" 
-            value="{{session.current_meeting.start_time}}" readonly>
-            to <input type="time" id="end_time" value="{{session.current_meeting.end_time}}" readonly>
-            <br>
-            <hr>
-            <h3>Send this link to invitees:</h3> <input type="text" size="65" id="invite_link" value="" readonly>
+            <h3>Send this link to invite people:</h3> <input type="text" size="65" id="invite_link" value="" readonly>
 
-            <h3>get respnose from these user: </h3>
+            <h3>below user accept this invite </h3>
             {% if session.names is defined %}
             {% for name in session.names %}
             <div class="row">
@@ -51,7 +42,7 @@
             </div>
             {% endif %}
 
-            <h3>free times:</h3>
+            <h3>avaiable times utill now :</h3>
             {% if session.free_times is defined %}
             {% if session.free_times is equalto []%}
             <div class="row">
@@ -69,12 +60,10 @@
             {% endfor %}
             {% endif %}
             {% endif %}
-
-        </div>  <!-- end container (for bootstrap) -->
     </body> 
 
     <script>
-        $("#invite_link").val(window.location.href.replace("meeting_detail","respond"));
+        $("#invite_link").val(window.location.href.replace("meeting_detail","invite"));
 
     </script>
 </html>

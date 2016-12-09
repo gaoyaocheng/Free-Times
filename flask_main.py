@@ -106,7 +106,6 @@ def check_time():
         return flask.redirect(flask.url_for('oauth2callback'))
 
     gcal_service = get_gcal_service(credentials)
-    app.logger.debug("Returned from get_gcal_service")
     flask.session['calendars'] = list_calendars(gcal_service)
     return render_template('check_time.html')
 
@@ -225,56 +224,37 @@ def ignore_busy_times():
 
 
 def get_freebusy_times(gcal_service, calendar_ids):
+
     busy_times = []
     free_times = []
-
-    calendar_ids = calendar_ids.split(";")
-
     start_date, end_date = flask.session['daterange'].split(" - ")
     time_range_start = arrow.get(start_date + flask.session['begin_time'], "MM/DD/YYYYHH:mm:ssZZ")
     time_range_end = arrow.get(start_date + flask.session['end_time'], "MM/DD/YYYYHH:mm:ssZZ")
     end_date = arrow.get(end_date, "MM/DD/YYYY")
-
-    app.logger.debug("Sending freebusy requests to Google Cal")
-    for id in calendar_ids:
-        if id == "":
+    for item in calendar_ids.split(";"):
+        if item == "":
             continue
-
-        # Not preferred
         for cal in flask.session['calendars']:
-            if cal['id'] == id:
+            if cal['id'] == item:
                 calendar = cal
                 break
-        #calendar = flask.session['calendars'][int(index)]
-        calendar_name = calendar['summary']
-
-        busy = {calendar_name : []}
-        free = {calendar_name : []}
+        name = calendar['summary']
+        busy = {name : []}
+        free = {name : []}
         timeMin = time_range_start.isoformat()
         timeMax = time_range_end.isoformat()
 
         for day in arrow.Arrow.span_range('day', time_range_start, end_date):
-            query = {
-                    "timeMin": timeMin,
-                    "timeMax": timeMax,
-                    "items": [
-                        {
-                            "id": calendar['id']
-                            }
-                        ]
-                    }
-
-            gcal_request = gcal_service.freebusy().query(body=query)
+            gcal_request = gcal_service.freebusy().query(body=
+                    {"timeMin": timeMin,"timeMax": timeMax,"items": [{"id": calendar['id']}]})
             result = gcal_request.execute()
-
             for busy_time in result['calendars'][calendar['id']]['busy']:
                 start = arrow.get(busy_time['start']).to('local')
                 end = arrow.get(busy_time['end']).to('local')
                 conflict = [start.isoformat(), end.isoformat()]
-                busy[calendar_name].append(conflict)
-            # Using the busy times, determine the free times
-            free_time = get_free_time(busy[calendar_name], timeMin, timeMax)
-            free[calendar_name].extend(free_time)
+                busy[name].append(conflict)
+            free_time = get_free_time(busy[name], timeMin, timeMax)
+            free[name].extend(free_time)
 
             timeMin = next_day(timeMin)
             timeMax = next_day(timeMax)
@@ -285,12 +265,9 @@ def get_freebusy_times(gcal_service, calendar_ids):
     return busy_times, free_times
 
 def get_free_time(busy_times, start_date, end_date):
-    busy = Agenda()
+    busy= Agenda()
     for item in busy_times:
-        busy.append(Appt(arrow.get(item), arrow.get(item), ""))
-
-    busy.normalize()
-
+        busy.append(Appt(arrow.get(item[0]), arrow.get(item[1]), ""))
     free = busy.complement(Appt(arrow.get(start_date), arrow.get(end_date), ""))
     return  [appt.get_isoformat() for appt in free]
 

@@ -11,34 +11,20 @@
 
     <body>
         <div class="container">
-
             <h1>Check Time with Google Calendar </h1>
             {% if session.current_meeting is defined %}
-            <h4>Currently responding to</h4>
-            Title: <input type="text" id="title" size=50 placeholder="Meeting title" 
-            value="{{ session.current_meeting.title }}"readonly><br><br>
-            Proposer: <input type="text" id="proposer" placeholder="Your name" 
-            value="{{ session.current_meeting.proposer_name }}" readonly><br><br>
-            Description: <textarea id="desc" rows=4 cols=50 placeholder="Details, location, etc. (optional)" 
-                readonly>{{ session.current_meeting.desc }}</textarea><br><br>
-
-            Date Range: <input type="text" id="daterange" size="24" 
-            value="{{ session.current_meeting.start_date }} - {{ session.current_meeting.end_date }}" readonly>
-
-            <br><br>
-
-            from <input type="time" id="begin_time" value="{{ session.current_meeting.start_time }}" readonly>
-            to <input type="time" id="end_time" value="{{ session.current_meeting.end_time }}" readonly>
+            Title       : {{session.current_meeting.title}} <br>
+            Proposer    : {{session.current_meeting.proposer_name}}<br>
+            Description : {{session.current_meeting.desc}}<br>
+            Time Range  :{{session.current_meeting.start_date}} {{session.current_meeting.start_time}} - {{session.current_meeting.end_date}} {{session.current_meeting.end_time}}
             <br>
             {% else %}
-            <h2>Oops. Something went wrong. <a link="/index">Go home?</a></h2>
+            <h2>Sorry there is no meeting. <a link="/index">Go home?</a></h2>
             {% endif %}
 
             <hr>
 
             {% if session.calendars is defined  %}
-            <h3>Enter your name : </h3>
-
             Name: <input type="text" id="user_name" placeholder="Your name" 
             value="{% if session.user_name is defined %} {{session.user_name}} {% endif %}">
             <br>
