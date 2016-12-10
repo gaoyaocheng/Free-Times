@@ -80,7 +80,7 @@
             {% endfor %}
             {% endfor %}
             <br>
-            <input type="submit" id="ignore_times" value="Ignore selected busy times">
+            <input type="submit" id="skip_times" value="skip selected busy times">
             <br><br>
             <input type="submit" id="submit_times" value="Submit these busy times">
 
@@ -100,7 +100,7 @@
         }
 
         var user_name = $("#user_name").val();
-        $.getJSON("/_setbusytimes", 
+        $.getJSON("/_set_busy_times", 
             {calendar_ids : ids,
                 name : user_name},
             function(data) {
@@ -110,7 +110,7 @@
     });
 
 // Get the ids of the busy times selected, send to the server
-$("#ignore_times").click(function() {
+$("#skip_times").click(function() {
     var checked = $("input:checked" || ".busy_time");
     if (checked == []) { // No times checked
         return;
@@ -121,7 +121,7 @@ $("#ignore_times").click(function() {
         times += checked[i].id + ";";
     }
 
-    $.getJSON("/_ignore_busy_times",
+    $.getJSON("/_skip_busy_times",
         {busy_times: times},
         function(date) {
             window.location.href = "check_time";

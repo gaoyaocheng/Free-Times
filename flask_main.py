@@ -74,35 +74,29 @@ def index():
 
 @app.route("/create_meeting")
 def create_meeting():
-    app.logger.debug("Entering create_meeting")
     return render_template('create_meeting.html')
 
 @app.route("/meeting_created/<mid>")
 def meeting_created(mid):
-    app.logger.debug("Entering proposal_created")
     flask.session['mid'] = mid
     return render_template("meeting_created.html")
 
 @app.route("/meeting_detail/<mid>")
 def meeting_detail(mid):
-    app.logger.debug("Entering meeting_detail")
 
     init_meeting(mid)
     return render_template('meeting_detail.html')
 
 @app.route("/invite/<mid>")
 def invite(mid):
-    app.logger.debug("Entering invite")
     init_meeting(mid)
     return render_template('invite.html')
 
 
 @app.route("/check_time")
 def check_time():
-    app.logger.debug("Checking credentials for Google calendar access")
     credentials = valid_credentials()
     if not credentials:
-        app.logger.debug("Redirecting to authorization")
         return flask.redirect(flask.url_for('oauth2callback'))
 
     gcal_service = get_gcal_service(credentials)
@@ -111,17 +105,12 @@ def check_time():
 
 @app.route("/thanks")
 def thanks():
-    app.logger.debug("Entering thanks")
     flask.session.clear()
     return render_template("thanks.html")
 
 #####    ajax handler     ######
 @app.route("/_submit_busy_times")
 def submit_busy_times():
-    '''
-    Submit the busy times currently in the flask session object
-    '''
-    app.logger.debug("Entering submit_busy_times, AJAX handler")
 
     id = ObjectId(flask.session['current_meeting']['_id'])
     for cal in flask.session['busy_times']:
@@ -143,7 +132,6 @@ def do_create_meeting():
     '''
     Create meeting to mongo
     '''
-    app.logger.debug("Entering do_create_meeting")
 
     title = request.form.get('title')
     proposer = request.form.get('proposer')
@@ -170,7 +158,6 @@ def delete_meetings():
     '''
     Delete a meeting from the DB
     '''
-    app.logger.debug("Entering delete_meetings, AJAX handler")
     meeting_ids = request.args.get("meeting_ids", type=str)
 
     meeting_ids = meeting_ids.split(";")
@@ -183,13 +170,11 @@ def delete_meetings():
 
     return jsonify(result={})
 
-@app.route("/_setbusytimes")
-def find_busy():
+@app.route("/_set_busy_times")
+def set_busy_times():
     ids = request.args.get("calendar_ids", type=str)
     user_name = request.args.get("name", type=str)
-
     flask.session['user_name'] = user_name
-
     credentials = valid_credentials()
     gcal_service = get_gcal_service(credentials)
 
@@ -199,21 +184,17 @@ def find_busy():
 
     return jsonify(result={})
 
-@app.route("/_ignore_busy_times")
-def ignore_busy_times():
-    '''
-    Ignore busy times created from Google Calendar service
-    '''
-    app.logger.debug("Entering ignore_busy_times, AJAX handler")
-    ignore_times = request.args.get("busy_times", type=str)
+@app.route("/_skip_busy_times")
+def skip_busy_times():
+    skip_times = request.args.get("busy_times", type=str)
 
-    ignore_times = [ time.split("&") for time in ignore_times.split(";") ]
-    ignore_times.remove([""])
+    skip_times = [ time.split("&") for time in skip_times.split(";") ]
+    skip_times.remove([""])
 
-    for ignore_cal, start, end in ignore_times:
+    for skip_cal, start, end in skip_times:
         for cal in flask.session['busy_times']:
             for cal_name in cal:
-                if cal_name != ignore_cal:
+                if cal_name != skip_cal:
                     continue
                 for time in cal[cal_name]:
                     if time[0] == start and time[1] == end:
